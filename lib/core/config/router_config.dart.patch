@@ -1,0 +1,5 @@
+Add before the closing bracket of routes array (after line 105):
+      GoRoute(
+        path: AppRoutes.upcomingSessions,
+        builder: (context, state) => const UpcomingSessionsPage(),
+      ),

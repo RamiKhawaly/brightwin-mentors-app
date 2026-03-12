@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "750588626647",
+    "project_id": "brightwin-2c8d8",
+    "storage_bucket": "brightwin-2c8d8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:750588626647:android:6e5765dc945dd0a4b6d292",
+        "android_client_info": {
+          "package_name": "com.brightway.brightwin_mentors"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBszl7hfv6tlIwSA_LVGEcfEkPXQNByl8k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
