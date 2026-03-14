@@ -5,7 +5,7 @@ import '../../../../core/config/router_config.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../settings/data/models/mentor_settings_request.dart';
-import '../../../profile/presentation/pages/complete_profile_from_linkedin_page.dart';
+import '../../../profile/presentation/pages/linkedin_search_page.dart';
 import '../../../profile/presentation/pages/complete_profile_from_cv_page.dart';
 import 'mentor_preferences_onboarding_page.dart';
 import 'onboarding_profile_builder_page.dart';
@@ -165,7 +165,7 @@ class _MentorOnboardingPageState extends State<MentorOnboardingPage> {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => const CompleteProfileFromLinkedInPage(),
+        builder: (context) => const LinkedInSearchPage(),
       ),
     );
 

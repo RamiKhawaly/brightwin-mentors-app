@@ -6,6 +6,7 @@ import '../../../../core/network/dio_client.dart';
 import '../../data/models/job_response_model.dart';
 import '../../data/repositories/job_repository_impl.dart';
 import '../widgets/available_jobs_tab.dart';
+import '../../../profile/presentation/pages/linkedin_job_selection_page.dart';
 
 class MyJobsPage extends StatefulWidget {
   const MyJobsPage({super.key});
@@ -127,13 +128,23 @@ class _MyJobsPageState extends State<MyJobsPage>
     );
   }
 
+  Future<void> _discoverCompanyJobs() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LinkedInJobSelectionPage(),
+      ),
+    );
+    if (result == true) _loadJobs();
+  }
+
   void _showJobPostingOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
+      builder: (ctx) {
         return Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -142,35 +153,55 @@ class _MyJobsPageState extends State<MyJobsPage>
             children: [
               Text(
                 'Post a Job',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(ctx).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
               Text(
                 'Choose how you want to add the job',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(ctx).textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                    color: const Color(0xFF0A66C2).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.business_center,
+                      color: Color(0xFF0A66C2)),
+                ),
+                title: const Text('Discover from your company'),
+                subtitle: const Text(
+                    'Find new openings at your company via LinkedIn'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _discoverCompanyJobs();
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.link,
-                    color: Theme.of(context).primaryColor,
+                    color: Theme.of(ctx).primaryColor,
                   ),
                 ),
                 title: const Text('Import from URL'),
-                subtitle: const Text('Paste a job link and AI will extract details'),
+                subtitle:
+                    const Text('Paste a job link and AI will extract details'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () async {
-                  Navigator.pop(context);
-                  final result = await context.push('${AppRoutes.jobPosting}/import');
-                  if (result == true) {
-                    _loadJobs();
-                  }
+                  Navigator.pop(ctx);
+                  final result =
+                      await context.push('${AppRoutes.jobPosting}/import');
+                  if (result == true) _loadJobs();
                 },
               ),
               const Divider(),
@@ -187,11 +218,9 @@ class _MyJobsPageState extends State<MyJobsPage>
                 subtitle: const Text('Fill in all job details yourself'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(ctx);
                   final result = await context.push(AppRoutes.jobPosting);
-                  if (result == true) {
-                    _loadJobs();
-                  }
+                  if (result == true) _loadJobs();
                 },
               ),
               const SizedBox(height: 16),
@@ -228,10 +257,12 @@ class _MyJobsPageState extends State<MyJobsPage>
     }
 
     if (_allJobs.isEmpty) {
-      return Center(
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            _buildDiscoverCard(),
+            const SizedBox(height: 32),
             Icon(Icons.work_off_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
@@ -254,8 +285,76 @@ class _MyJobsPageState extends State<MyJobsPage>
       onRefresh: _loadJobs,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _allJobs.length,
-        itemBuilder: (context, index) => _buildJobItem(_allJobs[index]),
+        itemCount: _allJobs.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) return _buildDiscoverCard();
+          return _buildJobItem(_allJobs[index - 1]);
+        },
+      ),
+    );
+  }
+
+  Widget _buildDiscoverCard() {
+    return GestureDetector(
+      onTap: _discoverCompanyJobs,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0A66C2), Color(0xFF0077B5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0A66C2).withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.business_center,
+                  color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Discover jobs from your company',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Find new openings via LinkedIn and assign them to yourself',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios,
+                color: Colors.white70, size: 14),
+          ],
+        ),
       ),
     );
   }

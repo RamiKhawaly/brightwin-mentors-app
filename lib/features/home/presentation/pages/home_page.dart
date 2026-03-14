@@ -12,8 +12,11 @@ import '../../../sessions/presentation/pages/sessions_main_page.dart';
 import '../../../jobs/presentation/pages/my_jobs_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../profile/data/repositories/profile_repository_impl.dart';
+import '../../../../core/services/linkedin_import_service.dart';
 import '../../../profile/data/models/user_profile_response_model.dart';
 import '../../../applications/presentation/pages/applications_page.dart';
+import '../../../feed/presentation/pages/feed_page.dart';
+import '../../../feed/presentation/widgets/feed_preview_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -259,14 +262,26 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: _buildDrawer(context),
-      body: _buildBody(),
+      body: SafeArea(
+        bottom: true,
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            _buildDashboard(),
+            const FeedPage(),
+            const MyJobsPage(),
+            SessionsMainPage(initialTabIndex: _sessionsTabIndex),
+            const ApplicationsPage(),
+          ],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
           setState(() {
             _selectedIndex = index;
             // Reset sessions tab to Requests (0) when navigating via bottom nav
-            if (index == 2) {
+            if (index == 3) {
               _sessionsTabIndex = 0;
             }
           });
@@ -276,6 +291,11 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.dynamic_feed_outlined),
+            selectedIcon: Icon(Icons.dynamic_feed),
+            label: 'Feed',
           ),
           NavigationDestination(
             icon: Icon(Icons.work_outline),
@@ -290,35 +310,10 @@ class _HomePageState extends State<HomePage> {
           NavigationDestination(
             icon: Icon(Icons.description_outlined),
             selectedIcon: Icon(Icons.description),
-            label: 'Applications',
+            label: 'Applies',
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildBody() {
-    Widget content;
-    switch (_selectedIndex) {
-      case 0:
-        content = _buildDashboard();
-        break;
-      case 1:
-        content = const MyJobsPage();
-        break;
-      case 2:
-        content = SessionsMainPage(initialTabIndex: _sessionsTabIndex);
-        break;
-      case 3:
-        content = const ApplicationsPage();
-        break;
-      default:
-        content = _buildDashboard();
-    }
-
-    return SafeArea(
-      bottom: true,
-      child: content,
     );
   }
 
@@ -377,7 +372,7 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.blue,
                             onTap: () {
                               setState(() {
-                                _selectedIndex = 1; // Navigate to Jobs tab
+                                _selectedIndex = 2; // Navigate to Jobs tab
                               });
                             },
                           ),
@@ -391,14 +386,14 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.purple,
                             onTap: () {
                               setState(() {
-                                _selectedIndex = 2; // Navigate to Sessions tab
+                                _selectedIndex = 3; // Navigate to Sessions tab
                               });
                             },
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
                     // Session Requests - show if there are pending requests
                     if (_pendingRequests.isNotEmpty) ...[
@@ -441,49 +436,36 @@ class _HomePageState extends State<HomePage> {
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: Padding(
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(14),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Icon(
                                   Icons.add_business,
                                   color: Colors.white,
-                                  size: 28,
+                                  size: 20,
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Post a Job',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Share internal positions and earn referral bonuses',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'Post a Job',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               const Icon(
                                 Icons.arrow_forward_ios,
                                 color: Colors.white,
-                                size: 18,
+                                size: 14,
                               ),
                             ],
                           ),
@@ -491,7 +473,13 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+
+                  // Feed Preview
+                  FeedPreviewWidget(
+                    onViewAll: () => setState(() => _selectedIndex = 1),
+                  ),
+                  const SizedBox(height: 24),
 
                   // Upcoming Sessions
                   Text(
@@ -526,6 +514,18 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildProfileCompletionBanner() {
     if (!_isProfileEmpty()) return const SizedBox.shrink();
+    return ListenableBuilder(
+      listenable: LinkedInImportService.instance,
+      builder: (context, child) {
+        if (LinkedInImportService.instance.status == LinkedInImportStatus.running)
+          return const SizedBox.shrink();
+        return child!;
+      },
+      child: _buildProfileCompletionBannerContent(),
+    );
+  }
+
+  Widget _buildProfileCompletionBannerContent() {
 
     const Color bannerColor = Color(0xFFFFFDE7); // light yellow
     const Color accentColor = Color(0xFFF9A825); // amber
@@ -605,21 +605,33 @@ class _HomePageState extends State<HomePage> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
             children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 20),
               ),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodySmall,
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
             ],
           ),

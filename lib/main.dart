@@ -10,6 +10,8 @@ import 'core/services/fcm_service.dart';
 import 'core/network/dio_client.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'core/services/environment_service.dart';
+import 'core/services/linkedin_import_service.dart';
+import 'features/profile/presentation/widgets/linkedin_import_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +36,9 @@ void main() async {
 
   // Setup dependency injection
   await setupLocator();
+
+  // Resume any in-progress LinkedIn import from before a restart
+  await LinkedInImportService.instance.resumeIfPending();
 
   runApp(const BrightwinMentorsApp());
 }
@@ -252,6 +257,32 @@ class _BrightwinMentorsAppState extends State<BrightwinMentorsApp> {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.light,
       routerConfig: AppRouterConfig.router,
+      builder: (context, child) {
+        return ListenableBuilder(
+          listenable: LinkedInImportService.instance,
+          builder: (context, _) {
+            // When the banner is visible, push the bottom of every Scaffold
+            // up by the banner's height so it never covers buttons/content.
+            const bannerHeight = 80.0; // card ~72 px + 8 px breathing room
+            final extra =
+                LinkedInImportService.instance.isActive ? bannerHeight : 0.0;
+            final mq = MediaQuery.of(context);
+            return Stack(
+              children: [
+                MediaQuery(
+                  data: mq.copyWith(
+                    padding: mq.padding.copyWith(
+                      bottom: mq.padding.bottom + extra,
+                    ),
+                  ),
+                  child: child!,
+                ),
+                const LinkedInImportBanner(),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -72,7 +72,11 @@ class AppRoutes {
 }
 
 class AppRouterConfig {
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+
   static final GoRouter router = GoRouter(
+    navigatorKey: navigatorKey,
     initialLocation: AppRoutes.splash,
     routes: [
       GoRoute(

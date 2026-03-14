@@ -9,6 +9,8 @@ import '../../data/models/education_model.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import 'profile_edit_page.dart';
 import 'complete_profile_from_cv_page.dart';
+import 'linkedin_search_page.dart';
+import '../../../../core/services/linkedin_import_service.dart';
 
 /// LinkedIn-style comprehensive profile view page - MAIN PROFILE PAGE
 class ProfilePage extends StatefulWidget {
@@ -64,6 +66,19 @@ class _ProfilePageState extends State<ProfilePage> {
       context,
       MaterialPageRoute(
         builder: (context) => const ProfileEditPage(),
+      ),
+    );
+
+    if (result == true) {
+      _loadProfile();
+    }
+  }
+
+  void _navigateToLinkedInScraper() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LinkedInSearchPage(),
       ),
     );
 
@@ -144,10 +159,16 @@ class _ProfilePageState extends State<ProfilePage> {
             if (profile.companyHistory != null && profile.companyHistory!.isNotEmpty)
               _buildCompaniesSection(context),
 
-            // Complete from CV CTA (if incomplete profile)
+            // Complete from CV CTA (if incomplete profile and no import running)
             if (profile.companyHistory == null || profile.companyHistory!.isEmpty ||
                 profile.education == null || profile.education!.isEmpty)
-              _buildCompleteFromCVBanner(),
+              ListenableBuilder(
+                listenable: LinkedInImportService.instance,
+                builder: (_, __) =>
+                    LinkedInImportService.instance.status == LinkedInImportStatus.running
+                        ? const SizedBox.shrink()
+                        : _buildCompleteFromCVBanner(),
+              ),
 
             // Company History Section (using new companyHistory field)
             if (profile.companyHistory != null && profile.companyHistory!.isNotEmpty)
@@ -920,7 +941,7 @@ class _ProfilePageState extends State<ProfilePage> {
         border: Border.all(color: Colors.blue.shade200),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
@@ -939,11 +960,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Upload your CV and let AI extract your professional information',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.blue[800],
-                      ),
+                      'Import from LinkedIn or upload your CV to get started',
+                      style: TextStyle(fontSize: 14, color: Colors.blue[800]),
                     ),
                   ],
                 ),
@@ -951,13 +969,25 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 16),
+          // Primary: LinkedIn (client-side scraper)
           ElevatedButton.icon(
+            onPressed: _navigateToLinkedInScraper,
+            icon: const Icon(Icons.link),
+            label: const Text('Import from LinkedIn'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0A66C2),
+              foregroundColor: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Secondary: upload CV
+          OutlinedButton.icon(
             onPressed: _navigateToCompleteFromCV,
             icon: const Icon(Icons.upload_file),
             label: const Text('Upload CV'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[700],
-              foregroundColor: Colors.white,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.blue[700],
+              side: BorderSide(color: Colors.blue.shade400),
             ),
           ),
         ],
